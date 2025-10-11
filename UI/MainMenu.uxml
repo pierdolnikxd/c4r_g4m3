@@ -1,0 +1,58 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/MainMenu.uss?fileID=7433441132597879392&amp;guid=91daded1f835b74418fdd74fc018c6f4&amp;type=3#MainMenu" />
+    <ui:VisualElement name="MainMenu" enabled="true" class="panel" style="display: none; visibility: visible; overflow: visible;">
+        <ui:Label text="Main Menu" class="title" />
+        <ui:Button name="PlayButton" text="Play" />
+        <ui:Button name="SettingsButton" text="Settings" />
+        <ui:Button name="CarSelectionButton" text="Car Selection" />
+        <ui:Button name="TuningButton" text="Tuning" />
+        <ui:Button name="ExitButton" text="Exit" />
+    </ui:VisualElement>
+    <ui:VisualElement name="Settings" class="panel" style="display: none;">
+        <ui:Label text="Settings" class="title" />
+        <ui:Button name="BackFromSettings" text="Back" />
+    </ui:VisualElement>
+    <ui:VisualElement name="Tuning" class="panel">
+        <ui:Label text="Car Tuning" class="title" style="-unity-text-align: upper-center; left: 10px;" />
+        <ui:VisualElement class="tuning-categories">
+            <ui:Button name="ECUButton" text="ECU" class="tuning-category-button" />
+            <ui:Button name="TurboButton" text="Turbo" class="tuning-category-button" />
+            <ui:Button name="ExhaustButton" text="Exhaust Manifold" class="tuning-category-button" />
+            <ui:Button name="FuelButton" text="Fuel System" class="tuning-category-button" />
+        </ui:VisualElement>
+        <ui:VisualElement name="TuningDetails" class="tuning-details">
+            <ui:VisualElement name="ECUSection" class="tuning-section" style="display: none;">
+                <ui:Label text="ECU System" class="section-title" />
+                <ui:VisualElement name="ECUStageContainer" class="tuning-categories" />
+                <ui:Label name="ECUStatusLabel" text="Current: None" class="status-label" />
+            </ui:VisualElement>
+            <ui:VisualElement name="TurboSection" class="tuning-section" style="display: none;">
+                <ui:Label text="Turbo System" class="section-title" />
+                <ui:VisualElement name="TurboStageContainer" class="tuning-categories" />
+                <ui:Label name="TurboStatusLabel" text="Current: None" class="status-label" />
+            </ui:VisualElement>
+            <ui:VisualElement name="ExhaustSection" class="tuning-section" style="display: none;">
+                <ui:Label text="Exhaust Manifold" class="section-title" />
+                <ui:Label text="Coming Soon..." class="coming-soon" />
+            </ui:VisualElement>
+            <ui:VisualElement name="FuelSection" class="tuning-section" style="display: none;">
+                <ui:Label text="Fuel System" class="section-title" />
+                <ui:Label text="Coming Soon..." class="coming-soon" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:Button name="BackFromTuning" text="Back" class="tuning-category-button" />
+    </ui:VisualElement>
+    <ui:VisualElement name="CarSelection" class="panel" style="display: none;">
+        <ui:Label text="Choose Your Car" class="title" />
+        <ui:VisualElement class="car-display-container">
+            <ui:Label name="CarNameLabel" text="car_placeholder" class="car-name" />
+            <ui:VisualElement name="SelectedIndicator" class="selected-indicator" />
+        </ui:VisualElement>
+        <ui:VisualElement class="car-navigation">
+            <ui:Button name="PreviousCarButton" text="◀ Previous" class="nav-button" />
+            <ui:Button name="SelectCarButton" text="Select Car" class="select-button" />
+            <ui:Button name="NextCarButton" text="Next ▶" class="nav-button" />
+        </ui:VisualElement>
+        <ui:Button name="BackFromCarSelection" text="Back" />
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,174 @@
+.panel {
+    flex-grow: 1;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.title {
+    font-size: 32px;
+    color: white;
+    unity-text-align: middle;
+    margin-bottom: 20px;
+}
+
+Button {
+    width: 200px;
+    height: 40px;
+    margin: 5px;
+    font-size: 18px;
+}
+
+/* Car Selection Styles */
+.car-display-container {
+    flex-direction: column;
+    align-items: center;
+    margin: 20px 0;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    min-height: 100px;
+}
+
+.car-name {
+    font-size: 24px;
+    color: #ffffff;
+    unity-text-align: middle;
+    margin-bottom: 10px;
+    font-style: bold;
+}
+
+.selected-indicator {
+    width: 20px;
+    height: 20px;
+    background-color: #00ff00;
+    border-radius: 50%;
+    margin-top: 10px;
+}
+
+.car-navigation {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.nav-button {
+    width: 120px;
+    height: 35px;
+    margin: 0 10px;
+    font-size: 16px;
+}
+
+.select-button {
+    width: 150px;
+    height: 40px;
+    margin: 0 15px;
+    font-size: 18px;
+    background-color: #4CAF50;
+    color: white;
+}
+
+.select-button:hover {
+    background-color: #45a049;
+}
+
+/* Tuning Menu Styles */
+.tuning-categories {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.tuning-category-button {
+    width: 140px;
+    height: 40px;
+    margin: 5px;
+    font-size: 16px;
+    background-color: #333333;
+    color: white;
+    border-width: 2px;
+    border-color: #555555;
+}
+
+.tuning-category-button:hover {
+    background-color: #444444;
+    border-color: #777777;
+}
+
+.tuning-category-button:active {
+    background-color: #555555;
+}
+
+.tuning-details {
+    flex-grow: 1;
+    margin: 20px 0;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    min-height: 200px;
+}
+
+.tuning-section {
+    flex-direction: column;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.section-title {
+    font-size: 20px;
+    color: #ffffff;
+    unity-text-align: middle;
+    margin-bottom: 15px;
+    font-style: bold;
+}
+
+.coming-soon {
+    font-size: 16px;
+    color: #888888;
+    unity-text-align: middle;
+    font-style: italic;
+}
+
+.turbo-options {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin: 15px 0;
+    flex-wrap: wrap;
+}
+
+.turbo-option-button {
+    width: 120px;
+    height: 35px;
+    margin: 5px;
+    font-size: 14px;
+    background-color: #2c3e50;
+    color: white;
+    border-width: 1px;
+    border-color: #34495e;
+}
+
+.turbo-option-button:hover {
+    background-color: #34495e;
+    border-color: #4a6741;
+}
+
+.turbo-option-button:active {
+    background-color: #1a252f;
+}
+
+.turbo-option-button.selected {
+    background-color: #27ae60;
+    border-color: #2ecc71;
+}
+
+.status-label {
+    font-size: 16px;
+    color: #2ecc71;
+    unity-text-align: middle;
+    margin-top: 10px;
+    font-style: bold;
+}
