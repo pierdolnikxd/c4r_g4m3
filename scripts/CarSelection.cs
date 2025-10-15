@@ -28,7 +28,7 @@ public class CarSelection : MonoBehaviour
     
     [SerializeField] private MainMenu mainMenu;
     
-    private int currentCarIndex = 0;
+    public int currentCarIndex = 0;
     private bool isRotatingCar = false;
     // Camera movement variables removed
 

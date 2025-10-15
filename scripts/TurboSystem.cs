@@ -206,15 +206,10 @@ public class TurboSystem : MonoBehaviour
                 if (state != PLAYBACK_STATE.PLAYING)
                 {
                     turboSpoolInstance.start();
-                    Debug.Log("[TurboSystem] Spool started (throttle > threshold).");
                 }
 
                 // ustaw parametr Boost (0..1)
                 FMOD.RESULT res = turboSpoolInstance.setParameterByName(boostParameter, boostNorm);
-                if (res != FMOD.RESULT.OK)
-                    Debug.LogWarning($"[TurboSystem] setParameterByName zwrócił: {res}");
-
-                Debug.Log($"[TurboSystem] Spool update -> throttle:{throttle:F2} boost:{boostNorm:F2} state:{state}");
             }
             else
             {
