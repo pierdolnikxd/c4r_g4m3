@@ -1,0 +1,12 @@
+<engine:UXML xmlns:ui="UnityEngine.UIElements"
+             xmlns:uie="UnityEditor.UIElements"
+             xmlns:engine="UnityEngine.UIElements">
+  <engine:VisualElement class="race-finish-panel">
+    <engine:Label name="titleLabel" text="🏁 Wyścig zakończony!" class="title" />
+    <engine:Label name="carNameLabel" text="Samochód:" class="info" />
+    <engine:Label name="positionLabel" text="Pozycja:" class="info" />
+    <engine:Label name="totalTimeLabel" text="Czas całkowity:" class="info" />
+    <engine:ScrollView name="lapTimesScroll" class="lap-times" />
+    <engine:Button name="exitButton" text="Wyjdź" class="exit-button" />
+  </engine:VisualElement>
+</engine:UXML>

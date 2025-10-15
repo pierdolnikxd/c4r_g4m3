@@ -1,162 +1,223 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
 
 public class RaceManager : MonoBehaviour
 {
     public static RaceManager Instance;
 
-    [Header("Ustawienia trasy")]
+    [Header("Race Settings")]
+    public Transform startLine;
+    public Transform playerStartPosition;
+    public Transform aiStartPosition;
     public Transform[] checkpoints;
-    public int lapsToComplete = 2;
+    public int totalLaps = 2;
 
-    [Header("UI")]
+    [Header("UI Elements")]
+    public Text raceInfoText;
     public Text lapText;
     public Text positionText;
-    public Text timerText;
-    public Text debugText;
+    public Text checkpointText;
 
-    [Header("Pojazdy")]
+    [Header("AI Settings")]
     public GameObject[] aiCars;
-    public Transform startPoint;
-    public Transform aiStartPoint;
-    public GameObject playerCar;
 
-    private GameObject aiInstance;
-    private float lapTime;
-    private int currentLap = 1;
+    private GameObject playerCar;
+    private GameObject aiCar;
+
+    private int currentLap = 0;
+    private int currentCheckpoint = 0;
     private bool raceStarted = false;
     private bool raceFinished = false;
 
-    private int playerNextCheckpoint = 0;
-    private int aiNextCheckpoint = 0;
+    private float lapStartTime;
+    private float lapTime;
 
-    private GameManager gameManager;
-    private CarSelection carSelection;
-    private void Start()
-{
-    gameManager = FindObjectOfType<GameManager>();
-
-    if (gameManager != null)
-    {
-        // pobierz numer wybranego auta z CarSelection
-        int index = CarSelection.selectedCar;
-
-        // upewnij się, że mieści się w zakresie
-        if (index >= 0 && index < gameManager.cars.Length)
-        {
-            playerCar = gameManager.cars[index];
-            Debug.Log($"[RaceManager] Wybrane auto gracza: {playerCar.name}");
-        }
-        else
-        {
-            Debug.LogWarning("[RaceManager] Niepoprawny indeks wybranego auta!");
-        }
-    }
-    else
-    {
-        Debug.LogError("[RaceManager] Nie znaleziono GameManagera w scenie!");
-    }
-}
-
-
-    private void Awake()
+    void Awake()
     {
         Instance = this;
     }
 
-    private void Update()
+    void Start()
     {
-        if (raceStarted && !raceFinished)
+        GameObject[] playerCars = GameObject.FindGameObjectsWithTag("PlayerCar");
+        foreach (var car in playerCars)
         {
-            lapTime += Time.deltaTime;
-            timerText.text = $"Czas: {lapTime:F2}s";
-        }
-        debugText.text = $"Oczekiwany checkpoint: {playerNextCheckpoint}/{checkpoints.Length - 1}";
-    }
-
-    private void OnDrawGizmos()
-{
-    Gizmos.color = Color.yellow;
-    Gizmos.DrawSphere(transform.position, 1f);
-    UnityEditor.Handles.Label(transform.position + Vector3.up * 2f, $"Checkpoint {checkpointIndex}");
-}
-
-
-    public void StartRace()
-{
-    // Losowy pojazd AI
-    int randomIndex = Random.Range(0, aiCars.Length);
-    aiInstance = Instantiate(aiCars[randomIndex], aiStartPoint.position, aiStartPoint.rotation);
-    aiInstance.tag = "AI";
-
-    // 🟩 PRZENIESIENIE GRACZA NA START
-    Debug.Log($"[RaceManager] Teleport gracza na: {startPoint.position}");
-    Debug.Log($"[RaceManager] Pozycja auta przed teleportem: {playerCar.transform.position}");
-
-    playerCar.transform.SetPositionAndRotation(startPoint.position, startPoint.rotation);
-
-    // Reset prędkości
-    Rigidbody rb = playerCar.GetComponent<Rigidbody>();
-    if (rb != null)
-    {
-        rb.linearVelocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
-    }
-
-    // 🟩 RESET STANU WYŚCIGU
-    lapTime = 0f;
-    currentLap = 1;
-    playerNextCheckpoint = 0;
-    raceStarted = true;
-    raceFinished = false;
-
-    lapText.text = $"Okrążenie: {currentLap}/{lapsToComplete}";
-    positionText.text = "Pozycja: 1/2";
-}
-
-
-    public void CheckpointPassed(GameObject car, int checkpointIndex)
-{
-    // GRACZ
-    if (car.CompareTag("Player"))
-    {
-        if (checkpointIndex == playerNextCheckpoint)
-        {
-            playerNextCheckpoint++;
-
-            // Jeśli gracz zaliczył wszystkie checkpointy
-            if (playerNextCheckpoint >= checkpoints.Length)
+            if (car.activeInHierarchy)
             {
-                playerNextCheckpoint = 0;
+                playerCar = car;
+                break;
+            }
+        }
+
+        if (playerCar == null)
+        {
+            Debug.LogError("❌ Nie znaleziono aktywnego auta gracza z tagiem 'PlayerCar'!");
+        }
+
+        if (raceInfoText != null)
+            raceInfoText.text = "Podjedź do punktu startowego, aby rozpocząć wyścig.";
+    }
+
+    public IEnumerator StartRace()
+    {
+        if (raceStarted) yield break;
+
+        raceStarted = true;
+        currentLap = 1;
+        currentCheckpoint = 0;
+        lapStartTime = Time.time;
+
+        if (raceInfoText != null)
+            raceInfoText.text = "Przygotuj się...";
+
+        yield return new WaitForSeconds(1.5f);
+
+        // Teleport gracza
+        if (playerCar != null && playerStartPosition != null)
+        {
+            Rigidbody rb = playerCar.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.Sleep();
+                rb.position = playerStartPosition.position;
+                rb.rotation = playerStartPosition.rotation;
+                rb.WakeUp();
+            }
+            else
+            {
+                playerCar.transform.SetPositionAndRotation(playerStartPosition.position, playerStartPosition.rotation);
+            }
+
+            Debug.Log($"🚗 Gracz przeteleportowany na start: {playerStartPosition.position}");
+        }
+        else
+        {
+            Debug.LogWarning("⚠ Nie ustawiono pozycji startowej gracza (playerStartPosition).");
+        }
+
+        // Spawn AI
+        if (aiCars.Length > 0 && aiStartPosition != null)
+        {
+            GameObject aiPrefab = aiCars[Random.Range(0, aiCars.Length)];
+            aiCar = Instantiate(aiPrefab, aiStartPosition.position, aiStartPosition.rotation);
+            Debug.Log($"🤖 AI samochód ustawiony na pozycji {aiStartPosition.position}");
+        }
+
+        UpdateUI();
+
+        if (raceInfoText != null)
+            raceInfoText.text = "🏁 Wyścig rozpoczęty!";
+    }
+
+    public void CheckpointPassed(int checkpointIndex)
+    {
+        if (!raceStarted || raceFinished) return;
+
+        Debug.Log($"✅ Checkpoint {checkpointIndex} — aktualny: {currentCheckpoint}, okrążenie: {currentLap}");
+
+        // Jeśli gracz przejechał poprawny checkpoint
+        if (checkpointIndex == currentCheckpoint)
+        {
+            currentCheckpoint++;
+
+            // Jeśli skończył okrążenie
+            if (currentCheckpoint >= checkpoints.Length)
+            {
+                currentCheckpoint = 0;
                 currentLap++;
 
-                if (currentLap > lapsToComplete)
+                if (currentLap > totalLaps)
                 {
-                    raceFinished = true;
-                    positionText.text = "META!";
-                    lapText.text = "Wyścig zakończony!";
+                    FinishRace();
                     return;
                 }
 
-                lapText.text = $"Okrążenie: {currentLap}/{lapsToComplete}";
-                lapTime = 0f;
+                lapStartTime = Time.time;
+                Debug.Log($"🏁 Rozpoczęto okrążenie {currentLap}");
             }
+
+            UpdateUI();
+        }
+        else
+        {
+            Debug.Log($"⚠ Pominięto lub zła kolejność checkpointów! ({checkpointIndex})");
         }
     }
 
-    // AI
-    if (car.CompareTag("AI"))
+    private void FinishRace()
     {
-        if (checkpointIndex == aiNextCheckpoint)
+        raceFinished = true;
+        raceStarted = false;
+
+        lapTime = Time.time - lapStartTime;
+
+        if (raceInfoText != null)
+            raceInfoText.text = $"🏆 Wyścig zakończony! Czas: {lapTime:F2}s";
+
+        UpdateUI();
+        Debug.Log("✅ Wyścig zakończony");
+    }
+
+    private void UpdateUI()
+    {
+        if (lapText != null)
+            lapText.text = $"Okrążenie: {currentLap}/{totalLaps}";
+
+        if (positionText != null)
+            positionText.text = $"Pozycja: {(aiCar != null ? "1/2" : "1/1")}";
+
+        if (checkpointText != null)
+            checkpointText.text = $"Checkpoint: {currentCheckpoint + 1}/{checkpoints.Length}";
+
+        Debug.Log($"📊 UI zaktualizowane → CP {currentCheckpoint + 1}/{checkpoints.Length}, Lap {currentLap}/{totalLaps}");
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (checkpoints != null && checkpoints.Length > 0)
         {
-            aiNextCheckpoint++;
-            if (aiNextCheckpoint >= checkpoints.Length)
-            {
-                aiNextCheckpoint = 0;
-            }
+            Gizmos.color = Color.yellow;
+            for (int i = 0; i < checkpoints.Length - 1; i++)
+                Gizmos.DrawLine(checkpoints[i].position, checkpoints[i + 1].position);
+
+            if (startLine != null)
+                Gizmos.DrawLine(checkpoints[checkpoints.Length - 1].position, startLine.position);
+        }
+
+        if (playerStartPosition != null)
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawSphere(playerStartPosition.position, 0.5f);
+        }
+
+        if (aiStartPosition != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(aiStartPosition.position, 0.5f);
         }
     }
+    public void ExitRaceMode()
+{
+    raceStarted = false;
+    raceFinished = false;
+    currentLap = 1;
+    currentCheckpoint = 0;
+
+    // Wznów fizykę i pozwól graczowi ruszyć
+    if (playerCar != null)
+    {
+        Rigidbody rb = playerCar.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+    }
+
+    Debug.Log("Wyścig zakończony — powrót do jazdy swobodnej.");
 }
 
 }

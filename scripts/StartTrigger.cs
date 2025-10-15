@@ -8,18 +8,20 @@ public class StartTrigger : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") || other.CompareTag("PlayerCar"))
         {
-            promptText.text = "Naciśnij ENTER, aby rozpocząć wyścig";
+            if (promptText != null)
+                promptText.text = "Naciśnij ENTER, aby rozpocząć wyścig";
             canStart = true;
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") || other.CompareTag("PlayerCar"))
         {
-            promptText.text = "";
+            if (promptText != null)
+                promptText.text = "";
             canStart = false;
         }
     }
@@ -28,8 +30,11 @@ public class StartTrigger : MonoBehaviour
     {
         if (canStart && Input.GetKeyDown(KeyCode.Return))
         {
-            promptText.text = "";
-            RaceManager.Instance.StartRace();
+            if (promptText != null)
+                promptText.text = "";
+
+            if (RaceManager.Instance != null)
+                RaceManager.Instance.StartCoroutine(RaceManager.Instance.StartRace());
         }
     }
 }

@@ -166,9 +166,24 @@ public class CarController : MonoBehaviour
     private bool[] absActive = new bool[4];
     private bool brakeLightsAreOn = false;
 
+    // W CarController.cs
+    [Header("AI Override")]
+    public bool isAI = false; 
+    public AIRacer aiRacer; // Referencja do skryptu AI (ustawiona automatycznie)
 
     void Awake()
     {
+
+        if (gameObject.CompareTag("AI"))
+    {
+        isAI = true;
+        aiRacer = GetComponent<AIRacer>();
+        if (aiRacer == null)
+        {
+            Debug.LogError("Samochód ma tag 'AI', ale brakuje skryptu AIRacer!", this);
+        }
+    }
+
         if (selectedEngine != null)
         {
             ApplyEngineSettings();
@@ -309,8 +324,10 @@ public class CarController : MonoBehaviour
 
     void Update()
     {
-        // Get input
-        GetInput();
+            if (!isAI) // TYLKO gracz używa GetInput
+        {
+            GetInput();
+        }
         
         // Handle automatic transmission
         HandleAutomaticTransmission();
@@ -1206,6 +1223,41 @@ public class CarController : MonoBehaviour
             }
         }
     }
+    /// <summary>
+    /// Metoda do sterowania pojazdem przez AI.
+    /// Zastępuje tradycyjne GetInput().
+    /// </summary>
+    public void SetInputs(float acceleration, float steering, float brake, bool handbrake)
+    {
+        // NOWA LINIA: Przypisanie wejścia skręcania!
+        steerInput = steering; // <--- TEGO BRAKOWAŁO!
+        
+        // Używamy tych samych zmiennych prywatnych co GetInput(), ale sterujemy nimi z zewnątrz
+        // NOTE: Zakładamy, że 'acceleration' to motorInput, a 'brake' to brakeInput.
+        
+        motorInput = acceleration;
+        
+        // Upewniamy się, że AI nie hamuje i nie przyspiesza jednocześnie
+        if (brake > 0.05f)
+        {
+            brakeInput = brake;
+            // Hamowanie aktywne, wyłączamy przyspieszenie
+            if (motorInput > 0f) motorInput = 0f;
+        }
+        else
+        {
+            brakeInput = 0f;
+        }
 
-    // ...existing code...
+        handbrakeInput = handbrake;
+        
+        // Jeśli AI chce cofać (acceleration < 0), musimy obsłużyć logikę biegu wstecznego.
+        if (motorInput < -0.3f)
+        {
+            // Pamiętaj, że CarController sam przełącza na R
+            // Nie musimy tu za to odpowiadać, wystarczy podać ujemną wartość do motorInput
+        }
+        
+        // AI nie jest graczem, więc ignorujemy logikę z Input.GetKey("S") i GetInput().
+    }
 }
