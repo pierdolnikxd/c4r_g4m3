@@ -19,11 +19,10 @@ public class RaceManager : MonoBehaviour
     public Text positionText;
     public Text checkpointText;
 
-    [Header("AI Settings")]
-    public GameObject[] aiCars;
+    // Usunięto tablicę aiCars, ponieważ będziemy używać istniejącego obiektu
 
     private GameObject playerCar;
-    private GameObject aiCar;
+    private GameObject aiCar; // Teraz będzie to referencja do istniejącego obiektu AI
 
     private int currentLap = 0;
     private int currentCheckpoint = 0;
@@ -35,11 +34,20 @@ public class RaceManager : MonoBehaviour
 
     void Awake()
     {
-        Instance = this;
+        // Upewnienie się, że jest tylko jedna instancja
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else if (Instance != this)
+        {
+            Destroy(gameObject);
+        }
     }
 
     void Start()
     {
+        // 1. Zlokalizuj auto gracza
         GameObject[] playerCars = GameObject.FindGameObjectsWithTag("PlayerCar");
         foreach (var car in playerCars)
         {
@@ -49,11 +57,25 @@ public class RaceManager : MonoBehaviour
                 break;
             }
         }
-
         if (playerCar == null)
         {
             Debug.LogError("❌ Nie znaleziono aktywnego auta gracza z tagiem 'PlayerCar'!");
         }
+
+        // 2. Zlokalizuj auto AI i je dezaktywuj
+        GameObject[] aiCars = GameObject.FindGameObjectsWithTag("AI");
+        if (aiCars.Length > 0)
+        {
+            aiCar = aiCars[0]; // Użyj pierwszego znalezionego
+            // Dezaktywuj auto AI na starcie
+            aiCar.SetActive(false); 
+            Debug.Log($"🤖 Auto AI ({aiCar.name}) znalezione i dezaktywowane.");
+        }
+        else
+        {
+            Debug.LogWarning("⚠ Nie znaleziono aktywnego auta AI z tagiem 'AI'.");
+        }
+
 
         if (raceInfoText != null)
             raceInfoText.text = "Podjedź do punktu startowego, aby rozpocząć wyścig.";
@@ -73,24 +95,10 @@ public class RaceManager : MonoBehaviour
 
         yield return new WaitForSeconds(1.5f);
 
-        // Teleport gracza
+        // --- Ustawienie gracza ---
         if (playerCar != null && playerStartPosition != null)
         {
-            Rigidbody rb = playerCar.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-                rb.Sleep();
-                rb.position = playerStartPosition.position;
-                rb.rotation = playerStartPosition.rotation;
-                rb.WakeUp();
-            }
-            else
-            {
-                playerCar.transform.SetPositionAndRotation(playerStartPosition.position, playerStartPosition.rotation);
-            }
-
+            TeleportAndResetCar(playerCar, playerStartPosition);
             Debug.Log($"🚗 Gracz przeteleportowany na start: {playerStartPosition.position}");
         }
         else
@@ -98,12 +106,25 @@ public class RaceManager : MonoBehaviour
             Debug.LogWarning("⚠ Nie ustawiono pozycji startowej gracza (playerStartPosition).");
         }
 
-        // Spawn AI
-        if (aiCars.Length > 0 && aiStartPosition != null)
+        // --- Ustawienie i Aktywacja AI ---
+        if (aiCar != null && aiStartPosition != null)
         {
-            GameObject aiPrefab = aiCars[Random.Range(0, aiCars.Length)];
-            aiCar = Instantiate(aiPrefab, aiStartPosition.position, aiStartPosition.rotation);
-            Debug.Log($"🤖 AI samochód ustawiony na pozycji {aiStartPosition.position}");
+            // Aktywacja istniejącego obiektu AI
+            aiCar.SetActive(true); 
+            TeleportAndResetCar(aiCar, aiStartPosition);
+            Debug.Log($"🤖 AI samochód aktywowany i ustawiony na pozycji {aiStartPosition.position}");
+
+            // Dodatkowo: po aktywacji, zresetuj stan kontrolera (np. dla AIRacer.cs)
+            AIRacer aiController = aiCar.GetComponent<AIRacer>();
+            if (aiController != null)
+            {
+                // Załóżmy, że masz metodę resetującą w AIRacer, jeśli jest potrzebna
+                // np. aiController.ResetRaceState(); 
+            }
+        }
+        else
+        {
+             Debug.LogWarning("⚠ Nie ustawiono auta AI lub pozycji startowej AI.");
         }
 
         UpdateUI();
@@ -112,9 +133,35 @@ public class RaceManager : MonoBehaviour
             raceInfoText.text = "🏁 Wyścig rozpoczęty!";
     }
 
+    private void TeleportAndResetCar(GameObject car, Transform targetPos)
+    {
+        Rigidbody rb = car.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            // Przeniesienie i reset fizyki
+            rb.position = targetPos.position;
+            rb.rotation = targetPos.rotation;
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+
+            // Spróbuj uśpić i wybudzić, by zresetować stany WheelColliderów
+            rb.Sleep();
+            rb.WakeUp();
+        }
+        else
+        {
+            car.transform.SetPositionAndRotation(targetPos.position, targetPos.rotation);
+        }
+    }
+
+
     public void CheckpointPassed(int checkpointIndex)
     {
         if (!raceStarted || raceFinished) return;
+
+        // ... reszta logiki CheckpointPassed (pozostawiona bez zmian) ...
 
         Debug.Log($"✅ Checkpoint {checkpointIndex} — aktualny: {currentCheckpoint}, okrążenie: {currentLap}");
 
@@ -157,6 +204,9 @@ public class RaceManager : MonoBehaviour
         if (raceInfoText != null)
             raceInfoText.text = $"🏆 Wyścig zakończony! Czas: {lapTime:F2}s";
 
+        // Deaktywacja AI po zakończeniu wyścigu
+        EndRaceMode(); 
+
         UpdateUI();
         Debug.Log("✅ Wyścig zakończony");
     }
@@ -167,7 +217,7 @@ public class RaceManager : MonoBehaviour
             lapText.text = $"Okrążenie: {currentLap}/{totalLaps}";
 
         if (positionText != null)
-            positionText.text = $"Pozycja: {(aiCar != null ? "1/2" : "1/1")}";
+            positionText.text = $"Pozycja: {(aiCar != null && aiCar.activeInHierarchy ? "1/2" : "1/1")}"; // Lepsze sprawdzenie
 
         if (checkpointText != null)
             checkpointText.text = $"Checkpoint: {currentCheckpoint + 1}/{checkpoints.Length}";
@@ -184,7 +234,7 @@ public class RaceManager : MonoBehaviour
                 Gizmos.DrawLine(checkpoints[i].position, checkpoints[i + 1].position);
 
             if (startLine != null)
-                Gizmos.DrawLine(checkpoints[checkpoints.Length - 1].position, startLine.position);
+                Gizmos.DrawLine(checkpoints[checkpoints.Length - 1].position, startLine.position, 10f); // Dodaj startLine
         }
 
         if (playerStartPosition != null)
@@ -199,25 +249,32 @@ public class RaceManager : MonoBehaviour
             Gizmos.DrawSphere(aiStartPosition.position, 0.5f);
         }
     }
-    public void ExitRaceMode()
-{
-    raceStarted = false;
-    raceFinished = false;
-    currentLap = 1;
-    currentCheckpoint = 0;
 
-    // Wznów fizykę i pozwól graczowi ruszyć
-    if (playerCar != null)
+    // Nowa metoda do deaktywacji AI i resetu trybu
+    public void EndRaceMode()
     {
-        Rigidbody rb = playerCar.GetComponent<Rigidbody>();
-        if (rb != null)
+        raceStarted = false;
+        raceFinished = false;
+        currentLap = 1;
+        currentCheckpoint = 0;
+
+        // Dezaktywuj auto AI
+        if (aiCar != null)
         {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+             aiCar.SetActive(false);
         }
+        
+        // Zresetuj fizykę gracza
+        if (playerCar != null)
+        {
+            Rigidbody rb = playerCar.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+        }
+
+        Debug.Log("Wyścig zakończony — powrót do jazdy swobodnej.");
     }
-
-    Debug.Log("Wyścig zakończony — powrót do jazdy swobodnej.");
-}
-
 }
