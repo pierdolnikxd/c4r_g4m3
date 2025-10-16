@@ -22,6 +22,12 @@ public class NewAIRacer : MonoBehaviour
     
     // Punkt docelowy, który AI ma osiągnąć (jest to pozycja obliczona przed samochodem)
     private Vector3 currentTargetPosition; 
+
+    // --- DODANE DLA INSPECTORA ---
+    [Header("Status AI (do podglądu)")]
+    public int currentGear = 0;
+    public float engineRPM = 0f;
+    public float currentSpeedKmh = 0f;
     
     // Stan AI
     private enum AIState { Driving, Recovering }; 
@@ -66,6 +72,29 @@ public class NewAIRacer : MonoBehaviour
         {
              UpdateTargetPosition(); 
         }
+
+        // --- AKTUALIZACJA PRĘDKOŚCI I SILNIKA ---
+        currentSpeedKmh = rb.linearVelocity.magnitude * 3.6f;
+
+        if (carController != null)
+        {
+            currentGear = carController.currentGear;   // zakładam, że CarController ma property CurrentGear
+            engineRPM = carController.engineRPM;      // zakładam, że CarController ma property EngineRPM
+        }
+
+        switch (currentState)
+        {
+            case AIState.Driving:
+                HandleStuckCheck(currentSpeedKmh);
+                HandleDriving(currentSpeedKmh);
+                break;
+            case AIState.Recovering:
+                HandleRecovery();
+                break;
+        }
+
+        if (currentState != AIState.Recovering)
+             UpdateTargetPosition(); 
     }
     
     // --- LOGIKA CELOWANIA I JAZDY ---
@@ -163,12 +192,21 @@ private void HandleRecovery()
     
     recoveryTimer -= Time.fixedDeltaTime;
     if (recoveryTimer <= 0f)
-    {
-        currentState = AIState.Driving;
-        Debug.Log("AI WYSZŁO Z UTKNIĘCIA. Wracam do jazdy.");
-        // Krótki postój, aby zmienić bieg (ustawiamy wszystkie wejścia na 0)
-        carController.SetInputs(0f, 0f, 1f, false);
-    }
+{
+    currentState = AIState.Driving;
+    Debug.Log("AI WYSZŁO Z UTKNIĘCIA. Wracam do jazdy.");
+
+    // Przywracamy normalne sterowanie
+    UpdateTargetPosition();
+
+    // Nie deklarujemy nowych zmiennych, tylko nadpisujemy istniejące
+    accelerationInput = CalculateAcceleration(currentSpeedKmh);
+    brakeInput = 0f; 
+    float steeringInput = CalculateSteering(); // można zadeklarować nową zmienną, bo jej jeszcze nie ma
+
+    carController.SetInputs(accelerationInput, steeringInput, brakeInput, false);
+}
+
 }
     
     private void HandleDriving(float currentSpeedKmh)
@@ -227,13 +265,22 @@ private void HandleRecovery()
     }
 
     private float CalculateBrake(float currentSpeedKmh, float steeringInput)
-    {
-        float brakeInput = 0f; 
-        
-        // ... (reszta logiki hamowania, bazująca na currentSpeedKmh i CalculateAvoidanceSteering) ...
+{
+    float brake = 0f;
 
-        return Mathf.Clamp01(brakeInput);
-    }
+    // Hamowanie w zależności od kąta skrętu
+    float angleFactor = Mathf.Abs(steeringInput);
+    float speedFactor = currentSpeedKmh / maxSpeedAI;
+
+    brake = Mathf.Clamp01(angleFactor * 0.8f + speedFactor * 0.2f);
+
+    // Dodatkowo hamowanie jeśli punkt docelowy jest blisko
+    float distToTarget = Vector3.Distance(transform.position, currentTargetPosition);
+    if (distToTarget < 5f)
+        brake = Mathf.Max(brake, 0.5f);
+
+    return Mathf.Clamp01(brake);
+}
 
     private float CalculateAvoidanceSteering()
     {

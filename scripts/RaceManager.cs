@@ -37,6 +37,7 @@ public class RaceManager : MonoBehaviour
 
     void Awake()
     {
+        // Singleton
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -44,7 +45,8 @@ public class RaceManager : MonoBehaviour
         }
         Instance = this;
 
-        AutoDetectCheckpoints();
+        // Automatycznie znajdź elementy tylko w ramach tego obiektu (Race1)
+        AutoDetectChildren();
     }
 
     void Start()
@@ -55,42 +57,44 @@ public class RaceManager : MonoBehaviour
             raceInfoText.text = "Podjedź do punktu startowego, aby rozpocząć wyścig.";
     }
 
+    // 🔍 Szukanie aut gracza i losowego AI
     private void FindCars()
     {
         playerCar = GameObject.FindGameObjectsWithTag("PlayerCar").FirstOrDefault(c => c.activeInHierarchy);
-        aiCar = GameObject.FindGameObjectsWithTag("AI").FirstOrDefault();
 
-        if (playerCar == null)
-            Debug.LogError("❌ Nie znaleziono aktywnego auta gracza z tagiem 'PlayerCar'!");
-
-        if (aiCar != null)
+        var allAICars = GameObject.FindGameObjectsWithTag("AI");
+        if (allAICars.Length > 0)
         {
+            // Losowo wybieramy jedno AI
+            aiCar = allAICars[Random.Range(0, allAICars.Length)];
             aiCar.SetActive(false);
-            Debug.Log($"🤖 Auto AI ({aiCar.name}) znalezione i dezaktywowane.");
+            Debug.Log($"🎲 Wylosowano AI: {aiCar.name}");
         }
         else
         {
-            Debug.LogWarning("⚠ Nie znaleziono aktywnego auta AI z tagiem 'AI'.");
+            Debug.LogWarning("⚠ Nie znaleziono żadnych samochodów AI w scenie!");
         }
+
+        if (playerCar == null)
+            Debug.LogError("❌ Nie znaleziono aktywnego auta gracza z tagiem 'PlayerCar'!");
     }
 
-    private void AutoDetectCheckpoints()
+    // 🔧 Wykrywanie tylko dzieci obiektu Race1 (checkpointy, start line, itp.)
+    void AutoDetectChildren()
+{
+    int count = transform.childCount;
+    for (int i = 0; i < count; i++)
     {
-        var cps = FindObjectsOfType<Checkpoint>();
-        if (cps.Length == 0)
+        Transform child = transform.GetChild(i);
+        Checkpoint cp = child.GetComponent<Checkpoint>();
+        if (cp != null)
         {
-            Debug.LogWarning("RaceManager: Nie znaleziono żadnych checkpointów!");
-            checkpoints = new Transform[0];
-            return;
+            cp.SetIndex(i); // ustawia indeks w czasie działania
+            Debug.Log($"➜ CP: {child.name} (index {cp.Index}) pod rodzicem {transform.name}");
         }
-
-        checkpoints = cps
-            .OrderBy(cp => cp.checkpointIndex)
-            .Select(cp => cp.transform)
-            .ToArray();
-
-        Debug.Log($"RaceManager: Załadowano {checkpoints.Length} checkpointów.");
     }
+}
+
 
     public IEnumerator StartRace()
     {
@@ -139,12 +143,12 @@ public class RaceManager : MonoBehaviour
             car.transform.SetPositionAndRotation(target.position, target.rotation);
     }
 
-    public void CheckpointPassed(int checkpointIndex)
+    public void CheckpointPassed(int index)
     {
         if (!raceStarted || raceFinished) return;
         if (checkpoints == null || checkpoints.Length == 0) return;
 
-        if (checkpointIndex == currentCheckpoint)
+        if (index == currentCheckpoint)
         {
             currentCheckpoint++;
 
@@ -172,7 +176,7 @@ public class RaceManager : MonoBehaviour
         }
         else
         {
-            Debug.Log($"⚠ Pominięto lub zła kolejność checkpointów! ({checkpointIndex})");
+            Debug.Log($"⚠ Pominięto lub zła kolejność checkpointów! ({index})");
         }
     }
 
@@ -223,7 +227,6 @@ public class RaceManager : MonoBehaviour
         float playerDist = Vector3.Distance(playerCar.transform.position, checkpoints[currentCheckpoint].position);
         float aiDist = Vector3.Distance(aiCar.transform.position, checkpoints[currentCheckpoint].position);
 
-        // Jeśli AI jest bliżej następnego checkpointu, wyprzedza gracza
         return aiDist < playerDist ? "2/2" : "1/2";
     }
 
@@ -234,7 +237,13 @@ public class RaceManager : MonoBehaviour
         currentLap = 1;
         currentCheckpoint = 0;
 
-        if (aiCar) aiCar.SetActive(false);
+        if (aiCar != null)
+        {
+            aiCar.SetActive(false);
+            var aiController = aiCar.GetComponent<NewAIRacer>();
+            if (aiController != null)
+                aiController.ResetRaceState();
+        }
 
         if (playerCar)
         {
@@ -246,34 +255,17 @@ public class RaceManager : MonoBehaviour
             }
         }
 
-        Debug.Log("Wyścig zakończony — powrót do jazdy swobodnej.");
-
-        if (aiCar != null)
-{
-    aiCar.SetActive(false);
-
-    var aiController = aiCar.GetComponent<NewAIRacer>();
-    if (aiController != null)
-        aiController.ResetRaceState(); // 🔁 resetujemy stan AI
-}
-
+        Debug.Log("🏁 Wyścig zakończony — powrót do jazdy swobodnej.");
     }
 
 #if UNITY_EDITOR
 private void OnDrawGizmos()
 {
-    // 🔁 Automatyczne wykrywanie checkpointów w edytorze (nawet bez uruchamiania gry)
-    if (checkpoints == null || checkpoints.Length == 0)
-    {
-        var cps = FindObjectsOfType<Checkpoint>();
-        if (cps.Length > 0)
-        {
-            checkpoints = cps
-                .OrderBy(cp => cp.checkpointIndex)
-                .Select(cp => cp.transform)
-                .ToArray();
-        }
-    }
+    // Aktualizuj checkpointy tylko z tego wyścigu i posortuj po index
+    checkpoints = GetComponentsInChildren<Checkpoint>(true)
+        .OrderBy(cp => cp.index)
+        .Select(cp => cp.transform)
+        .ToArray();
 
     if (checkpoints == null || checkpoints.Length < 2)
         return;
@@ -284,12 +276,26 @@ private void OnDrawGizmos()
     {
         if (checkpoints[i] == null) continue;
 
+        // Pobierz środek collidera checkpointa
+        Vector3 currentCenter = checkpoints[i].GetComponent<Collider>()?.bounds.center ?? checkpoints[i].position;
+
         int nextIndex = (i + 1) % checkpoints.Length;
         if (checkpoints[nextIndex] != null)
-            Gizmos.DrawLine(checkpoints[i].position, checkpoints[nextIndex].position);
+        {
+            Vector3 nextCenter = checkpoints[nextIndex].GetComponent<Collider>()?.bounds.center ?? checkpoints[nextIndex].position;
+            Gizmos.DrawLine(currentCenter, nextCenter);
+        }
 
-        Gizmos.DrawSphere(checkpoints[i].position, 0.5f);
-        UnityEditor.Handles.Label(checkpoints[i].position + Vector3.up * 1.5f, $"CP {i}");
+        // Rysuj sferę i label w środku collidera
+        Gizmos.DrawSphere(currentCenter, 0.5f);
+        UnityEditor.Handles.Label(currentCenter + Vector3.up * 1.5f, $"CP {i}");
+    }
+
+    if (startLine != null)
+    {
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireCube(startLine.position, new Vector3(5, 0.5f, 1));
+        UnityEditor.Handles.Label(startLine.position + Vector3.up * 1.5f, "Start/Meta");
     }
 }
 #endif
@@ -302,4 +308,5 @@ public static class UITextExtensions
     {
         if (text != null) text.text = value;
     }
+    
 }

@@ -128,9 +128,9 @@ public class CarController : MonoBehaviour
     private bool handbrakeInput;
     
     // Engine and transmission
-    private float engineRPM;
+    public float engineRPM;
     private float targetRPM;
-    private int currentGear = 1; // Start in first gear (index 2 in array)
+    public int currentGear = 1; // Start in first gear (index 2 in array)
     private bool isShifting = false;
     private float shiftTimer = 0f;
     private float rpmDropStartValue = 0f;

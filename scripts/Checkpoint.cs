@@ -2,51 +2,59 @@ using UnityEngine;
 
 public class Checkpoint : MonoBehaviour
 {
-    public int checkpointIndex;
+    private RaceManager localRaceManager;
+
+    [SerializeField] public int index = -1; // prywatne, domyślnie -1
+    public int Index => index;               // getter tylko do odczytu
+
+    public void SetIndex(int i)
+    {
+        index = i;
+    }
+
+    private void Awake()
+    {
+        // 🔍 automatycznie znajdź najbliższego RaceManagera w hierarchii nadrzędnej
+        localRaceManager = GetComponentInParent<RaceManager>();
+        if (localRaceManager == null)
+            Debug.LogWarning($"⚠ Checkpoint {name} nie znalazł RaceManagera w rodzicu!");
+    }
 
     private void OnTriggerEnter(Collider other)
     {
         // Gracz
         if (other.CompareTag("PlayerCar"))
         {
-            RaceManager.Instance?.CheckpointPassed(checkpointIndex);
+            localRaceManager?.CheckpointPassed(index);
         }
         // AI
         else if (other.CompareTag("AI"))
         {
             NewAIRacer aiRacer = other.GetComponent<NewAIRacer>();
             if (aiRacer != null)
-                aiRacer.OnPassCheckpoint(checkpointIndex);
+                aiRacer.OnPassCheckpoint(index);
         }
     }
 
 #if UNITY_EDITOR
-private void OnDrawGizmos()
-{
-    Gizmos.color = Color.yellow;
-
-    BoxCollider box = GetComponent<BoxCollider>();
-    if (box != null)
+    private void OnDrawGizmos()
     {
-        // Ustawienie macierzy Gizmo, aby uwzględniała lokalną pozycję, rotację i skalę
-        Matrix4x4 rotationMatrix = Matrix4x4.TRS(transform.position, transform.rotation, transform.lossyScale);
-        Gizmos.matrix = rotationMatrix;
+        Gizmos.color = Color.yellow;
 
-        // Rysowanie pudełka zgodnego z lokalnymi rozmiarami BoxCollidera
-        Gizmos.DrawWireCube(box.center, box.size);
+        BoxCollider box = GetComponent<BoxCollider>();
+        if (box != null)
+        {
+            Matrix4x4 rotationMatrix = Matrix4x4.TRS(transform.position, transform.rotation, transform.lossyScale);
+            Gizmos.matrix = rotationMatrix;
 
-        // Obliczamy środek BoxCollidera w world-space
-        Vector3 worldCenter = transform.TransformPoint(box.center);
+            Gizmos.DrawWireCube(box.center, box.size);
 
-        // Przesunięcie napisu - używamy lokalnej osi 'up' obiektu tak, by etykieta była nad pudłem
-        float yOffset = box.size.y * 0.5f + 0.15f; // lekko ponad górną krawędź
-        Vector3 labelPos = worldCenter + transform.up * yOffset;
+            Vector3 worldCenter = transform.TransformPoint(box.center);
+            float yOffset = box.size.y * 0.5f + 0.15f;
+            Vector3 labelPos = worldCenter + transform.up * yOffset;
 
-        // Rysujemy etykietę w world-space (Handles.Label działa w przestrzeni światowej)
-        UnityEditor.Handles.Label(labelPos, $"CP {checkpointIndex}");
+            UnityEditor.Handles.Label(labelPos, $"CP {index}");
+        }
     }
-}
 #endif
-
-
 }
