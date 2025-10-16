@@ -6,29 +6,47 @@ public class Checkpoint : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        // Sprawdź, czy to jest samochód gracza
+        // Gracz
         if (other.CompareTag("PlayerCar"))
         {
-            if (RaceManager.Instance != null)
-            {
-                 RaceManager.Instance.CheckpointPassed(checkpointIndex);
-            }
+            RaceManager.Instance?.CheckpointPassed(checkpointIndex);
         }
-        
-        // Sprawdź, czy to jest samochód AI (Tag: "AI")
+        // AI
         else if (other.CompareTag("AI"))
         {
-            AIRacer aiRacer = other.GetComponent<AIRacer>();
+            NewAIRacer aiRacer = other.GetComponent<NewAIRacer>();
             if (aiRacer != null)
-            {
-                // Poinformuj skrypt AIRacer, że przejechał ten checkpoint
                 aiRacer.OnPassCheckpoint(checkpointIndex);
-                
-                // Opcjonalnie: Poinformuj RaceManagera o postępach AI (jeśli RaceManager to obsługuje)
-                // W Twoim RaceManager.cs nie ma publicznej metody dla AI, więc pomijamy to na razie.
-            }
-            // Mimo że AI przejechało, RaceManager.CheckpointPassed jest tylko dla gracza,
-            // więc nie wywołujemy go dla AI.
         }
     }
+
+#if UNITY_EDITOR
+private void OnDrawGizmos()
+{
+    Gizmos.color = Color.yellow;
+
+    BoxCollider box = GetComponent<BoxCollider>();
+    if (box != null)
+    {
+        // Ustawienie macierzy Gizmo, aby uwzględniała lokalną pozycję, rotację i skalę
+        Matrix4x4 rotationMatrix = Matrix4x4.TRS(transform.position, transform.rotation, transform.lossyScale);
+        Gizmos.matrix = rotationMatrix;
+
+        // Rysowanie pudełka zgodnego z lokalnymi rozmiarami BoxCollidera
+        Gizmos.DrawWireCube(box.center, box.size);
+
+        // Obliczamy środek BoxCollidera w world-space
+        Vector3 worldCenter = transform.TransformPoint(box.center);
+
+        // Przesunięcie napisu - używamy lokalnej osi 'up' obiektu tak, by etykieta była nad pudłem
+        float yOffset = box.size.y * 0.5f + 0.15f; // lekko ponad górną krawędź
+        Vector3 labelPos = worldCenter + transform.up * yOffset;
+
+        // Rysujemy etykietę w world-space (Handles.Label działa w przestrzeni światowej)
+        UnityEditor.Handles.Label(labelPos, $"CP {checkpointIndex}");
+    }
+}
+#endif
+
+
 }

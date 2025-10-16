@@ -122,8 +122,8 @@ public class CarController : MonoBehaviour
     // Private variables
     private Rigidbody rb;
     private WheelCollider[] wheelColliders;
-    private float motorInput;
-    private float steerInput;
+    public float motorInput;
+    public float steerInput;
     private float brakeInput;
     private bool handbrakeInput;
     
@@ -169,7 +169,7 @@ public class CarController : MonoBehaviour
     // W CarController.cs
     [Header("AI Override")]
     public bool isAI = false; 
-    public AIRacer aiRacer; // Referencja do skryptu AI (ustawiona automatycznie)
+    public NewAIRacer aiRacer; // Referencja do skryptu AI (ustawiona automatycznie)
 
     void Awake()
     {
@@ -177,7 +177,7 @@ public class CarController : MonoBehaviour
         if (gameObject.CompareTag("AI"))
     {
         isAI = true;
-        aiRacer = GetComponent<AIRacer>();
+        aiRacer = GetComponent<NewAIRacer>();
         if (aiRacer == null)
         {
             Debug.LogError("Samochód ma tag 'AI', ale brakuje skryptu AIRacer!", this);
