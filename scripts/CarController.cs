@@ -551,7 +551,7 @@ public class CarController : MonoBehaviour
         }
     }
 
-    void ShiftUp()
+    public void ShiftUp()
     {
         if (currentGear < 6)
         {
@@ -1028,6 +1028,11 @@ public class CarController : MonoBehaviour
         return engineRPM;
     }
 
+    public float GetCurrentSpeed()
+    {
+        return currentSpeed;
+    }
+
     // Add this method to expose current gear to TurboSystem
     public int GetCurrentGear()
     {
@@ -1227,7 +1232,7 @@ public class CarController : MonoBehaviour
     /// Metoda do sterowania pojazdem przez AI.
     /// Zastępuje tradycyjne GetInput().
     /// </summary>
-    public void SetInputs(float acceleration, float steering, float brake, bool handbrake)
+    public void SetInputs(float acceleration, float steering, float brake)
     {
         // NOWA LINIA: Przypisanie wejścia skręcania!
         steerInput = steering; // <--- TEGO BRAKOWAŁO!
@@ -1236,7 +1241,7 @@ public class CarController : MonoBehaviour
         // NOTE: Zakładamy, że 'acceleration' to motorInput, a 'brake' to brakeInput.
         
         motorInput = acceleration;
-        
+
         // Upewniamy się, że AI nie hamuje i nie przyspiesza jednocześnie
         if (brake > 0.05f)
         {
@@ -1247,15 +1252,6 @@ public class CarController : MonoBehaviour
         else
         {
             brakeInput = 0f;
-        }
-
-        handbrakeInput = handbrake;
-        
-        // Jeśli AI chce cofać (acceleration < 0), musimy obsłużyć logikę biegu wstecznego.
-        if (motorInput < -0.3f)
-        {
-            // Pamiętaj, że CarController sam przełącza na R
-            // Nie musimy tu za to odpowiadać, wystarczy podać ujemną wartość do motorInput
         }
         
         // AI nie jest graczem, więc ignorujemy logikę z Input.GetKey("S") i GetInput().
