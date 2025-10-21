@@ -149,39 +149,6 @@ public class TurboSystem : MonoBehaviour
         if (turboSpoolActive)
             UpdateSpoolFMOD(rpm, throttle, currentPSI);
 
-        // test keys (do debugowania, usuń później)
-        if (Input.GetKeyDown(KeyCode.P))
-        {
-            try
-            {
-                PLAYBACK_STATE state;
-                turboSpoolInstance.getPlaybackState(out state);
-                Debug.Log($"[TurboSystem][P] Spool playback state: {state}");
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"[TurboSystem][P] Nie można pobrać playback state: {e}");
-            }
-        }
-        if (Input.GetKeyDown(KeyCode.O)) // wymuś Boost = 1
-        {
-            try
-            {
-                turboSpoolInstance.setParameterByName(boostParameter, 1f);
-                Debug.Log("[TurboSystem][O] Wymuszono Boost=1");
-            }
-            catch (System.Exception e) { Debug.LogError(e); }
-        }
-        if (Input.GetKeyDown(KeyCode.K)) // wymuś Boost = 0
-        {
-            try
-            {
-                turboSpoolInstance.setParameterByName(boostParameter, 0f);
-                Debug.Log("[TurboSystem][K] Wymuszono Boost=0");
-            }
-            catch (System.Exception e) { Debug.LogError(e); }
-        }
-
         lastThrottle = throttle;
     }
 
@@ -216,12 +183,10 @@ public class TurboSystem : MonoBehaviour
                 // wycisz lub zatrzymaj
                 FMOD.RESULT res = turboSpoolInstance.setParameterByName(boostParameter, 0f);
                 if (res != FMOD.RESULT.OK)
-                    Debug.LogWarning($"[TurboSystem] setParameterByName(0) zwrócił: {res}");
 
                 if (state == PLAYBACK_STATE.PLAYING)
                 {
                     turboSpoolInstance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
-                    Debug.Log("[TurboSystem] Spool stop (throttle released).");
                 }
             }
         }

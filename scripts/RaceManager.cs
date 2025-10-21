@@ -15,6 +15,10 @@ public class RaceManager : MonoBehaviour
     public int totalLaps = 2;
     public bool loopTrack = true;
 
+    [Header("Ścieżka trasy (dla AI)")]
+    public WaypointPath waypointPath; // przypisz w Inspectorze (np. z Race1 lub Race2)
+
+
     [Header("UI Elements")]
     public Text raceInfoText;
     public Text lapText;
@@ -37,13 +41,6 @@ public class RaceManager : MonoBehaviour
 
     void Awake()
     {
-        // Singleton
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
 
         // Automatycznie znajdź elementy tylko w ramach tego obiektu (Race1)
         AutoDetectChildren();
@@ -59,25 +56,35 @@ public class RaceManager : MonoBehaviour
 
     // 🔍 Szukanie aut gracza i losowego AI
     private void FindCars()
+{
+    // --- znajdź auto gracza ---
+    playerCar = GameObject.FindGameObjectsWithTag("PlayerCar")
+        .FirstOrDefault(c => c.activeInHierarchy);
+
+    if (playerCar == null)
+        Debug.LogError($"❌ Nie znaleziono auta gracza z tagiem 'PlayerCar' ({name})!");
+
+    // --- znajdź AI ---
+    var allAICars = GameObject.FindGameObjectsWithTag("AI");
+
+    if (allAICars.Length > 0)
     {
-        playerCar = GameObject.FindGameObjectsWithTag("PlayerCar").FirstOrDefault(c => c.activeInHierarchy);
+        // losowo wybierz jedno (nawet jeśli nieaktywne)
+        aiCar = allAICars[Random.Range(0, allAICars.Length)];
 
-        var allAICars = GameObject.FindGameObjectsWithTag("AI");
-        if (allAICars.Length > 0)
+        // nie aktywuj od razu — zrobi to StartRace()
+        if (aiCar != null)
         {
-            // Losowo wybieramy jedno AI
-            aiCar = allAICars[Random.Range(0, allAICars.Length)];
-            aiCar.SetActive(false);
-            Debug.Log($"🎲 Wylosowano AI: {aiCar.name}");
+            aiCar.SetActive(true);
+            Debug.Log($"🎲 Wylosowano AI dla {name}: {aiCar.name}");
         }
-        else
-        {
-            Debug.LogWarning("⚠ Nie znaleziono żadnych samochodów AI w scenie!");
-        }
-
-        if (playerCar == null)
-            Debug.LogError("❌ Nie znaleziono aktywnego auta gracza z tagiem 'PlayerCar'!");
     }
+    else
+    {
+        Debug.LogWarning($"⚠ Brak samochodów AI w scenie dla {name}!");
+    }
+}
+
 
     // 🔧 Wykrywanie tylko dzieci obiektu Race1 (checkpointy, start line, itp.)
     void AutoDetectChildren()
@@ -114,10 +121,20 @@ public class RaceManager : MonoBehaviour
             Debug.LogWarning("⚠ Brak pozycji startowej gracza!");
 
         if (aiCar && aiStartPosition)
-        {
-            aiCar.SetActive(true);
-            TeleportAndResetCar(aiCar, aiStartPosition);
-        }
+{
+    aiCar.SetActive(true);
+    TeleportAndResetCar(aiCar, aiStartPosition);
+
+    // przypisz waypointy i managera AI
+    var aiController = aiCar.GetComponent<NewAIRacer>();
+    if (aiController != null)
+    {
+        aiController.waypointPath = waypointPath;
+        aiController.raceManager = this;
+        aiController.ResetRaceState();
+    }
+}
+
         else
         {
             Debug.LogWarning("⚠ Brak pozycji startowej AI!");
