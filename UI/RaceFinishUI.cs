@@ -50,7 +50,7 @@ public class RaceFinishUI : MonoBehaviour
         Time.timeScale = 1f;
 
         if (RaceManager.Instance != null)
-            RaceManager.Instance.ExitRaceMode();
+            RaceManager.Instance.EndRaceMode();
     }
 }
     
