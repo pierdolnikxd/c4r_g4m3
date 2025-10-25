@@ -5,11 +5,13 @@ public class MenuManager : MonoBehaviour
 {
     private VisualElement root;
 
+    // Panele
     private VisualElement mainMenu;
     private VisualElement settings;
-    private VisualElement tuning;
+    private VisualElement tuningMenu;
     private VisualElement carSelection;
-    
+
+    // Komponenty logiki
     private CarSelectionUI carSelectionUI;
     private TuningController tuningController;
 
@@ -17,69 +19,79 @@ public class MenuManager : MonoBehaviour
     {
         root = GetComponent<UIDocument>().rootVisualElement;
 
-        // wyciągamy panele
+        // Panele z UXML
         mainMenu = root.Q<VisualElement>("MainMenu");
         settings = root.Q<VisualElement>("Settings");
-        tuning = root.Q<VisualElement>("Tuning");
+        tuningMenu = root.Q<VisualElement>("TuningMenu");  // nowy panel z 3 przyciskami
         carSelection = root.Q<VisualElement>("CarSelection");
-        
-        // Get components
+
+        // Skrypty
         carSelectionUI = GetComponent<CarSelectionUI>();
         tuningController = GetComponent<TuningController>();
 
-        // przypisujemy przyciski w Main Menu
+        // --- MAIN MENU ---
         root.Q<Button>("SettingsButton").clicked += () => ShowPanel(settings);
-        root.Q<Button>("CarSelectionButton").clicked += () => ShowCarSelection();
-        root.Q<Button>("TuningButton").clicked += () => ShowTuning();
-        root.Q<Button>("ExitButton").clicked += () => Application.Quit();
+        root.Q<Button>("CarSelectionButton").clicked += ShowCarSelection;
+        root.Q<Button>("TuningButton").clicked += ShowTuningMenu;
+        root.Q<Button>("ExitButton").clicked += Application.Quit;
 
-        // przyciski "Back"
+        // --- SETTINGS ---
         root.Q<Button>("BackFromSettings").clicked += () => ShowPanel(mainMenu);
-        root.Q<Button>("BackFromTuning").clicked += () => ShowPanel(mainMenu);
+
+        // --- TUNING MENU (Engine / Visual / Back) ---
+        var engineBtn = root.Q<Button>("EngineButton");
+        var visualBtn = root.Q<Button>("VisualButton");
+        var backBtn = root.Q<Button>("BackFromTuningMenu");
+
+        if (engineBtn != null)
+            engineBtn.clicked += ShowEngineTuning;
+
+        if (visualBtn != null)
+            visualBtn.clicked += () => Debug.Log("Visual tuning - placeholder");
+
+        if (backBtn != null)
+            backBtn.clicked += () => ShowPanel(mainMenu);
+
+        // --- CAR SELECTION ---
         root.Q<Button>("BackFromCarSelection").clicked += () => ShowPanel(mainMenu);
 
-        // na start pokaż Main Menu
+        // Startowy ekran
         ShowPanel(mainMenu);
     }
+
+    // -------------------------------------------------------------------------
 
     private void ShowPanel(VisualElement panelToShow)
     {
         mainMenu.style.display = DisplayStyle.None;
         settings.style.display = DisplayStyle.None;
-        tuning.style.display = DisplayStyle.None;
+        tuningMenu.style.display = DisplayStyle.None;
         carSelection.style.display = DisplayStyle.None;
 
         panelToShow.style.display = DisplayStyle.Flex;
     }
-    
+
     private void ShowCarSelection()
     {
         ShowPanel(carSelection);
-        if (carSelectionUI != null)
-        {
-            carSelectionUI.ShowCarSelection();
-        }
+        carSelectionUI?.ShowCarSelection();
     }
-    
-    private void ShowTuning()
+
+    private void ShowTuningMenu()
     {
-        ShowPanel(tuning);
-        if (tuningController != null)
-        {
-            tuningController.ShowTuning();
-        }
+        ShowPanel(tuningMenu);
     }
-    
+
+    private void ShowEngineTuning()
+    {
+        ShowPanel(tuningMenu); // Możesz zmienić na osobny panel, jeśli masz.
+        tuningController?.ShowTuning();
+    }
+
     public void ShowMainMenu()
     {
         ShowPanel(mainMenu);
-        if (carSelectionUI != null)
-        {
-            carSelectionUI.HideCarSelection();
-        }
-        if (tuningController != null)
-        {
-            tuningController.HideTuning();
-        }
+        carSelectionUI?.HideCarSelection();
+        tuningController?.HideTuning();
     }
 }
