@@ -174,8 +174,22 @@ public class CarSelectionUI : MonoBehaviour
     
     public void HideCarSelection()
     {
-        HideAllCars();
     }
+
+    public void ShowSelectedCar()
+{
+    HideAllCars(); // Wciąż potrzebne, by ukryć wszystkie, zanim pokażesz wybrany
+
+    int selectedIndex = PlayerPrefs.GetInt("SelectedCarIndex", 0);
+    if (availableCars.Count > 0 && selectedIndex < availableCars.Count && availableCars[selectedIndex].spawnedInstance != null)
+    {
+        availableCars[selectedIndex].spawnedInstance.SetActive(true);
+
+        // Opcjonalnie: ustaw currentCarIndex na selectedIndex, aby przyciski Previous/Next w CarSelection działały od wybranego auta
+        currentCarIndex = selectedIndex; 
+        UpdateCarDisplay();
+    }
+}
     
     // Public method to get the currently selected car
     public CarInfo GetSelectedCar()

@@ -63,10 +63,13 @@ public class TuningController : MonoBehaviour
     private int currentTurboStage = 0;
     private int currentECUStage = 0;
 
+    private CarSelectionUI carSelectionUI;
+
     void Awake()
     {
         root = GetComponent<UIDocument>().rootVisualElement;
-        tuningPanel = root.Q<VisualElement>("Tuning");
+        tuningPanel = root.Q<VisualElement>("TuningEngineMenu");
+        carSelectionUI = GetComponent<CarSelectionUI>();
 
         // Kategorie
         ecuButton = root.Q<Button>("ECUButton");
@@ -200,21 +203,31 @@ public class TuningController : MonoBehaviour
     }
 
     private void ApplyTurboToSelectedCar()
+{
+    // 1. Spróbuj pobrać samochód wyświetlany w menu z CarSelectionUI
+    if (carSelectionUI == null) return;
+
+    GameObject selectedCarInstance = carSelectionUI.GetSelectedCar()?.spawnedInstance;
+
+    if (selectedCarInstance == null)
     {
-        int selectedCarIndex = PlayerPrefs.GetInt("SelectedCarIndex", 0);
-        if (GameManager.Instance == null || GameManager.Instance.allCars == null) return;
-        if (selectedCarIndex >= GameManager.Instance.allCars.Count) return;
-
-        GameObject selectedCar = GameManager.Instance.allCars[selectedCarIndex];
-        if (selectedCar == null) return;
-
-        TurboSystem turboSystem = selectedCar.GetComponent<TurboSystem>();
-        if (turboSystem != null)
-        {
-            turboSystem.maxPSI = turboStages[currentTurboStage].maxPSI;
-            turboSystem.enabled = currentTurboStage > 0;
-        }
+        Debug.LogWarning("Cannot apply turbo: No spawned car instance found in CarSelectionUI.");
+        return;
     }
+
+    // 2. Aplikuj TurboSystem do tej instancji
+    TurboSystem turboSystem = selectedCarInstance.GetComponent<TurboSystem>();
+    if (turboSystem != null)
+    {
+        turboSystem.maxPSI = turboStages[currentTurboStage].maxPSI;
+        turboSystem.enabled = currentTurboStage > 0;
+        Debug.Log($"Applied Turbo Stage {turboStages[currentTurboStage].name} with {turboSystem.maxPSI} PSI to: {selectedCarInstance.name}");
+    }
+    else
+    {
+         Debug.LogWarning($"Car {selectedCarInstance.name} does not have a TurboSystem component.");
+    }
+}
 
     // -----------------------------
     // ECU
@@ -236,16 +249,19 @@ public class TuningController : MonoBehaviour
     }
 
     private void ApplyECUToSelectedCar()
+{
+    if (carSelectionUI == null) return;
+
+    GameObject selectedCarInstance = carSelectionUI.GetSelectedCar()?.spawnedInstance;
+    
+    if (selectedCarInstance == null)
     {
-        int selectedCarIndex = PlayerPrefs.GetInt("SelectedCarIndex", 0);
-        if (GameManager.Instance == null || GameManager.Instance.allCars == null) return;
-        if (selectedCarIndex >= GameManager.Instance.allCars.Count) return;
+        Debug.LogWarning("Cannot apply ECU: No spawned car instance found in CarSelectionUI.");
+        return;
+    }
 
-        GameObject selectedCar = GameManager.Instance.allCars[selectedCarIndex];
-        if (selectedCar == null) return;
-
-        CarController carController = selectedCar.GetComponent<CarController>();
-        if (carController == null) return;
+    CarController carController = selectedCarInstance.GetComponent<CarController>();
+    if (carController == null) return;
 
         BaseEngine engine = carController.selectedEngine;
         if (engine == null || engine.baseEngineTorqueCurve == null) return;

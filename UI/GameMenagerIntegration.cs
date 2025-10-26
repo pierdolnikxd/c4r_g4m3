@@ -38,12 +38,14 @@ public class GameManagerIntegration : MonoBehaviour
             var root = GetComponent<UIDocument>().rootVisualElement;
             var mainMenu = root.Q<VisualElement>("MainMenu");
             var settings = root.Q<VisualElement>("Settings");
-            var tuning = root.Q<VisualElement>("Tuning");
+            var tuningMenu = root.Q<VisualElement>("TuningMenu");
+            var tuningEngineMenu = root.Q<VisualElement>("TuningEngineMenu");
             var carSelection = root.Q<VisualElement>("CarSelection");
             
             mainMenu.style.display = DisplayStyle.None;
             settings.style.display = DisplayStyle.None;
-            tuning.style.display = DisplayStyle.None;
+            tuningMenu.style.display = DisplayStyle.None;
+            tuningEngineMenu.style.display = DisplayStyle.None;
             carSelection.style.display = DisplayStyle.None;
             Time.timeScale = 1f;
         }

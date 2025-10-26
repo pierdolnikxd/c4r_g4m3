@@ -9,11 +9,15 @@ public class MenuManager : MonoBehaviour
     private VisualElement mainMenu;
     private VisualElement settings;
     private VisualElement tuningMenu;
+    private VisualElement tuningEngineMenu;
+    private VisualElement visualTuningMenu; // <-- DODAJ TO
+    private VisualElement partSelectionPanel; // <-- DODAJ TO
     private VisualElement carSelection;
 
     // Komponenty logiki
     private CarSelectionUI carSelectionUI;
     private TuningController tuningController;
+    private VisualTuningController visualTuningController; // <-- DODAJ TO
 
     void Awake()
     {
@@ -22,12 +26,16 @@ public class MenuManager : MonoBehaviour
         // Panele z UXML
         mainMenu = root.Q<VisualElement>("MainMenu");
         settings = root.Q<VisualElement>("Settings");
-        tuningMenu = root.Q<VisualElement>("TuningMenu");  // nowy panel z 3 przyciskami
+        tuningMenu = root.Q<VisualElement>("TuningMenu");
+        tuningEngineMenu = root.Q<VisualElement>("TuningEngineMenu");
+        visualTuningMenu = root.Q<VisualElement>("VisualTuningMenu"); // <-- DODAJ TO
+        partSelectionPanel = root.Q<VisualElement>("PartSelectionPanel"); // <-- DODAJ TO
         carSelection = root.Q<VisualElement>("CarSelection");
 
         // Skrypty
         carSelectionUI = GetComponent<CarSelectionUI>();
         tuningController = GetComponent<TuningController>();
+        visualTuningController = GetComponent<VisualTuningController>(); // <-- DODAJ TO
 
         // --- MAIN MENU ---
         root.Q<Button>("SettingsButton").clicked += () => ShowPanel(settings);
@@ -39,21 +47,83 @@ public class MenuManager : MonoBehaviour
         root.Q<Button>("BackFromSettings").clicked += () => ShowPanel(mainMenu);
 
         // --- TUNING MENU (Engine / Visual / Back) ---
-        var engineBtn = root.Q<Button>("EngineButton");
-        var visualBtn = root.Q<Button>("VisualButton");
-        var backBtn = root.Q<Button>("BackFromTuningMenu");
+        var engineBtn = root.Q<Button>("EngineTuning");
+        var visualBtn = root.Q<Button>("VisualTuning"); // <-- Poprawna nazwa z UXML
+        var backFromTuningEngine = root.Q<Button>("BackFromTuning");
+
+        if (backFromTuningEngine != null)
+            backFromTuningEngine.clicked += ShowTuningMenu;
 
         if (engineBtn != null)
             engineBtn.clicked += ShowEngineTuning;
 
         if (visualBtn != null)
-            visualBtn.clicked += () => Debug.Log("Visual tuning - placeholder");
+            visualBtn.clicked += ShowVisualTuningMenu; // <-- ZMIANA: Przekierowanie do nowej metody
 
+        var frontBtn = root.Q<Button>("FrontBumperButton");
+        if (frontBtn != null)
+            frontBtn.clicked += () => 
+            {
+                ShowPanel(partSelectionPanel); // <-- DODAJ PRZEŁĄCZENIE PANELU
+                visualTuningController?.StartPartSelection("front");
+            };
+
+        var backBtn = root.Q<Button>("BackBumperButton");
         if (backBtn != null)
-            backBtn.clicked += () => ShowPanel(mainMenu);
+            backBtn.clicked += () => 
+            {
+                ShowPanel(partSelectionPanel); // <-- DODAJ PRZEŁĄCZENIE PANELU
+                visualTuningController?.StartPartSelection("rear");
+            };
 
-        // --- CAR SELECTION ---
-        root.Q<Button>("BackFromCarSelection").clicked += () => ShowPanel(mainMenu);
+        var spoilertBtn = root.Q<Button>("SpoilerButton");
+        if (spoilertBtn != null)
+            spoilertBtn.clicked += () => 
+            {
+                ShowPanel(partSelectionPanel); // <-- DODAJ PRZEŁĄCZENIE PANELU
+                visualTuningController?.StartPartSelection("spoiler");
+            };
+
+        var exhaustBtn = root.Q<Button>("ExhaustTipButton");
+        if (exhaustBtn != null)
+            exhaustBtn.clicked += () => 
+            {
+                ShowPanel(partSelectionPanel); // <-- DODAJ PRZEŁĄCZENIE PANELU
+                visualTuningController?.StartPartSelection("exhaust");
+            };
+
+        var hoodBtn = root.Q<Button>("HoodButton");
+        if (hoodBtn != null)
+            hoodBtn.clicked += () => 
+            {
+                ShowPanel(partSelectionPanel); // <-- DODAJ PRZEŁĄCZENIE PANELU
+                visualTuningController?.StartPartSelection("hood");
+            };
+
+        var skirtBtn = root.Q<Button>("SkirtsButton");
+        if (skirtBtn != null)
+            skirtBtn.clicked += () => 
+            {
+                ShowPanel(partSelectionPanel); // <-- DODAJ PRZEŁĄCZENIE PANELU
+                visualTuningController?.StartPartSelection("skirts");
+            };
+
+    // Przycisk "Back"
+    root.Q<Button>("BackFromVisualTuning").clicked += ShowTuningMenu;
+
+    // --- PART SELECTION PANEL (Powrót) ---
+    root.Q<Button>("BackFromPartSelection").clicked += ShowVisualTuningMenu;
+
+    // --- CAR SELECTION ---
+        var selectCarBtn = root.Q<Button>("SelectCarButton"); // Zakładam, że masz taki przycisk w UXML
+    if (selectCarBtn != null)
+        selectCarBtn.clicked += () => ShowPanel(mainMenu); // <-- DODAJ/POLEPSZ TĘ LINIĘ
+
+        //back from tuning
+        root.Q<Button>("BackFromTuningMenu").clicked += () => ShowPanel(mainMenu);
+
+        //pokaz wybrane auto
+        carSelectionUI?.ShowSelectedCar();
 
         // Startowy ekran
         ShowPanel(mainMenu);
@@ -61,11 +131,14 @@ public class MenuManager : MonoBehaviour
 
     // -------------------------------------------------------------------------
 
-    private void ShowPanel(VisualElement panelToShow)
+    public void ShowPanel(VisualElement panelToShow)
     {
         mainMenu.style.display = DisplayStyle.None;
         settings.style.display = DisplayStyle.None;
         tuningMenu.style.display = DisplayStyle.None;
+        tuningEngineMenu.style.display = DisplayStyle.None;
+        visualTuningMenu.style.display = DisplayStyle.None; // <-- DODAJ TO
+        partSelectionPanel.style.display = DisplayStyle.None; // <-- DODAJ TO
         carSelection.style.display = DisplayStyle.None;
 
         panelToShow.style.display = DisplayStyle.Flex;
@@ -77,14 +150,14 @@ public class MenuManager : MonoBehaviour
         carSelectionUI?.ShowCarSelection();
     }
 
-    private void ShowTuningMenu()
+    public void ShowTuningMenu()
     {
         ShowPanel(tuningMenu);
     }
 
-    private void ShowEngineTuning()
+    public void ShowEngineTuning()
     {
-        ShowPanel(tuningMenu); // Możesz zmienić na osobny panel, jeśli masz.
+        ShowPanel(tuningEngineMenu); // Możesz zmienić na osobny panel, jeśli masz.
         tuningController?.ShowTuning();
     }
 
@@ -94,4 +167,10 @@ public class MenuManager : MonoBehaviour
         carSelectionUI?.HideCarSelection();
         tuningController?.HideTuning();
     }
+// Nowa metoda
+public void ShowVisualTuningMenu()
+{
+    ShowPanel(visualTuningMenu);
+    visualTuningController?.ShowVisualTuningMenu();
+}
 }

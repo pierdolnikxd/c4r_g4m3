@@ -8,11 +8,20 @@
         <ui:Button name="TuningButton" text="Tuning" />
         <ui:Button name="ExitButton" text="Exit" />
     </ui:VisualElement>
+
     <ui:VisualElement name="Settings" class="panel" style="display: none;">
         <ui:Label text="Settings" class="title" />
         <ui:Button name="BackFromSettings" text="Back" />
     </ui:VisualElement>
-    <ui:VisualElement name="Tuning" class="panel">
+
+    <ui:VisualElement name="TuningMenu" class="panel" style="display: none;">
+        <ui:Label text="Tuning Menu" class="title" />
+        <ui:Button name="EngineTuning" text="Engine" />
+        <ui:Button name="VisualTuning" text="Visual" />
+        <ui:Button name="BackFromTuningMenu" text="Back" />
+    </ui:VisualElement>
+
+    <ui:VisualElement name="TuningEngineMenu" class="panel">
         <ui:Label text="Car Tuning" class="title" style="-unity-text-align: upper-center; left: 10px;" />
         <ui:VisualElement class="tuning-categories">
             <ui:Button name="ECUButton" text="ECU" class="tuning-category-button" />
@@ -42,6 +51,28 @@
         </ui:VisualElement>
         <ui:Button name="BackFromTuning" text="Back" class="tuning-category-button" />
     </ui:VisualElement>
+
+    <ui:VisualElement name="VisualTuningMenu" class="panel" style="display: none;">
+        <ui:Label text="Visual Tuning" class="title" />
+        <ui:Button name="FrontBumperButton" text="Front Bumper" />
+        <ui:Button name="RearBumperButton" text="Rear Bumper" />
+        <ui:Button name="SpoilerButton" text="Spoiler" />
+        <ui:Button name="ExhaustTipButton" text="Exhaust Tip" />
+        <ui:Button name="HoodButton" text="Hood" />
+        <ui:Button name="SkirtsButton" text="Side Skirts" />
+        <ui:Button name="BackFromVisualTuning" text="Back" />
+    </ui:VisualElement>
+
+    <ui:VisualElement name="PartSelectionPanel" class="panel" style="display: none;">
+        <ui:Label name="PartNameLabel" text="[Part Category]: [Part Name] (1/X)" class="title" style="margin-bottom: 50px;" />
+        <ui:VisualElement class="car-navigation">
+            <ui:Button name="PrevPartButton" text="◀ Previous" class="nav-button" />
+            <ui:Button name="SelectPartButton" text="Select" class="select-button" />
+            <ui:Button name="NextPartButton" text="Next ▶" class="nav-button" />
+        </ui:VisualElement>
+        <ui:Button name="BackFromPartSelection" text="Back" style="margin-top: 50px;" />
+    </ui:VisualElement>
+
     <ui:VisualElement name="CarSelection" class="panel" style="display: none;">
         <ui:Label text="Choose Your Car" class="title" />
         <ui:VisualElement class="car-display-container">
@@ -55,4 +86,5 @@
         </ui:VisualElement>
         <ui:Button name="BackFromCarSelection" text="Back" />
     </ui:VisualElement>
+    
 </ui:UXML>
