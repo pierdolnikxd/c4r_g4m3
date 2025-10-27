@@ -29,6 +29,11 @@ public class VisualTuningController : MonoBehaviour
     // Wymagane nazwy GameObjects na samochodzie
     private readonly string[] partCategories = { "front", "rear", "spoiler", "exhaust", "hood", "skirts" };
 
+    [Header("Kontrola Kamery")]
+    [SerializeField] private MenuCameraController menuCameraController;
+    private Transform currentCarTransform;
+    private Transform generalViewTarget; // Cel "camera_menu" (główny widok)
+
     void Awake()
     {
         root = GetComponent<UIDocument>().rootVisualElement;
@@ -55,6 +60,39 @@ public class VisualTuningController : MonoBehaviour
 // Ta metoda jest wywoływana przez MenuManager po kliknięciu przycisku "Visual"
 public void ShowVisualTuningMenu()
 {
+    // KONTROLA KLUCZOWEJ REFERENCJI
+    if (menuCameraController == null)
+    {
+        Debug.LogError("VisualTuningController: menuCameraController nie jest przypisane w Inspectorze! Przeciągnij obiekt Kamery.");
+        return; // Zatrzymuje dalsze wykonywanie, gdy brakuje kontrolera
+    }
+
+    // 1. Ustaw ogólny cel kamery, jeśli jeszcze tego nie zrobiłeś
+    if (generalViewTarget == null)
+    {
+        GameObject selectedCarInstance = carSelectionUI?.GetSelectedCar()?.spawnedInstance;
+
+        if (selectedCarInstance != null)
+        {
+            generalViewTarget = selectedCarInstance.transform.Find("Camera_General");
+        }
+        
+        // KONTROLA TARGETU
+        if (generalViewTarget == null)
+        {
+            Debug.LogError("VisualTuningController: Nie znaleziono obiektu 'CameraTarget_General' w prefabie samochodu!");
+        }
+    }
+    
+    // 2. Przenieś kamerę do ogólnego widoku menu ("camera_menu")
+    if (generalViewTarget != null)
+    {
+        menuCameraController.SetNewTarget(generalViewTarget);
+    }
+    else
+    {
+        Debug.LogWarning("VisualTuningController: generalViewTarget jest NULL. Kamera nie została przeniesiona.");
+    }
     // WAŻNE: Inicjalizuj części tutaj, gdy tylko wejdziesz do menu Visual Tuning.
     // Zapewni to, że carParts jest wypełnione przed kliknięciem kategorii.
     if (!InitializeCarParts()) 
@@ -85,12 +123,72 @@ public void StartPartSelection(string partCategory)
         return;
     }
 
+    FocusCameraOnPart(partCategory);
+
     // 2. Jeśli mamy części, ładujemy indeks i aktualizujemy UI
     LoadCurrentPartIndex(); 
     UpdatePartVisibility();
     UpdatePartSelectionUI();
     
     // Panel jest przełączany już przez MenuManager, więc tu nie musimy
+}
+
+    public void FocusCameraOnPart(string partCategory)
+{
+    if (menuCameraController == null)
+    {
+        Debug.LogError("FocusCameraOnPart: menuCameraController jest NULL.");
+        return; 
+    }
+
+    // 1. Znajdź aktywny samochód i jego transformację
+    GameObject selectedCarInstance = carSelectionUI?.GetSelectedCar()?.spawnedInstance;
+    if (selectedCarInstance == null) return;
+    currentCarTransform = selectedCarInstance.transform;
+
+    string targetName = "Camera_General";
+    
+    // 2. Mapowanie kategorii na puste obiekty kamery
+    switch (partCategory)
+    {
+        case "front":
+        case "hood":
+            targetName = "Camera_Front";
+            break;
+        case "rear":
+        case "spoiler":
+        case "exhaust":
+            targetName = "Camera_Rear"; 
+            break;
+        case "skirts":
+            targetName = "Camera_Side";
+            break;
+        default:
+            targetName = "Camera_General";
+            Debug.LogWarning($"Nieznana kategoria '{partCategory}'. Ustawiam {targetName}."); // Log dla nieznanej kategorii
+            break;
+    }
+    
+    // 3. Znajdź docelowy obiekt i przenieś kamerę
+    Transform target = currentCarTransform.Find(targetName);
+
+    if (target != null)
+    {
+        menuCameraController.SetNewTarget(target);
+    }
+    else
+    {
+        Debug.LogWarning($"Nie znaleziono celu kamery: {targetName}. Wracam do widoku ogólnego.");
+        menuCameraController.SetNewTarget(generalViewTarget);
+    }
+}
+
+public void ResetCameraToGeneralView()
+{
+    if (menuCameraController != null && generalViewTarget != null)
+    {
+        menuCameraController.SetNewTarget(generalViewTarget);
+    }
 }
 
     private bool InitializeCarParts()
