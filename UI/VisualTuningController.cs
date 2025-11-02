@@ -29,10 +29,13 @@ public class VisualTuningController : MonoBehaviour
     // Wymagane nazwy GameObjects na samochodzie
     private readonly string[] partCategories = { "front", "rear", "spoiler", "exhaust", "hood", "skirts" };
 
-    [Header("Kontrola Kamery")]
-    [SerializeField] private MenuCameraController menuCameraController;
-    private Transform currentCarTransform;
-    private Transform generalViewTarget; // Cel "camera_menu" (główny widok)
+    // W VisualTuningController.cs (gdzieś na górze klasy, obok innych pól)
+
+[Header("Kontrola Kamery")]
+[SerializeField] private MenuCameraController menuCameraController;
+private Transform currentCarTransform;
+private Transform generalViewTarget;
+private MonoBehaviour cameraFollowScript; // Pole na konkurencyjny skrypt
 
     void Awake()
     {
@@ -67,6 +70,23 @@ public void ShowVisualTuningMenu()
         return; // Zatrzymuje dalsze wykonywanie, gdy brakuje kontrolera
     }
 
+    // KLUCZOWY KROK: WYŁĄCZENIE KONFLIKTUJĄCEGO SKRYPTU
+    if (cameraFollowScript == null)
+    {
+        // Szukamy skryptu CameraFollow na tym samym obiekcie, co menuCameraController
+        cameraFollowScript = menuCameraController.GetComponent("CameraFollow") as MonoBehaviour; 
+        if (cameraFollowScript == null)
+        {
+             Debug.LogWarning("VisualTuningController: Brak skryptu CameraFollow do wyłączenia. Zakładamy, że nie ma konfliktu.");
+        }
+    }
+    
+    if (cameraFollowScript != null)
+    {
+        cameraFollowScript.enabled = false;
+        Debug.Log("Skrypt CameraFollow został WYŁĄCZONY.");
+    }
+
     // 1. Ustaw ogólny cel kamery, jeśli jeszcze tego nie zrobiłeś
     if (generalViewTarget == null)
     {
@@ -82,6 +102,11 @@ public void ShowVisualTuningMenu()
         {
             Debug.LogError("VisualTuningController: Nie znaleziono obiektu 'CameraTarget_General' w prefabie samochodu!");
         }
+
+        if (generalViewTarget != null)
+    {
+        menuCameraController.SetNewTarget(generalViewTarget);
+    }
     }
     
     // 2. Przenieś kamerę do ogólnego widoku menu ("camera_menu")
@@ -185,6 +210,14 @@ public void StartPartSelection(string partCategory)
 
 public void ResetCameraToGeneralView()
 {
+    // WŁĄCZ Z POWROTEM CameraFollow
+    if (cameraFollowScript != null)
+    {
+        cameraFollowScript.enabled = true;
+        Debug.Log("Skrypt CameraFollow został WŁĄCZONY Z POWROTEM.");
+    }
+
+    // Wróć do widoku ogólnego (teraz CameraFollow przejmie kontrolę, jeśli jest włączony)
     if (menuCameraController != null && generalViewTarget != null)
     {
         menuCameraController.SetNewTarget(generalViewTarget);

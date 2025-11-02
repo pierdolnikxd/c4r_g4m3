@@ -1,32 +1,30 @@
-// NOWA WERSJA MenuCameraController.cs
+// MenuCameraController.cs
+
 using UnityEngine;
 
 public class MenuCameraController : MonoBehaviour
 {
     [Header("Ustawienia Płynności")]
-    [Tooltip("Szybkość przejścia kamery. Wartość 15-20 jest zalecana.")]
+    // Szybkość przejścia. Wartość 15-20 jest zalecana (0.25 sekundy to ok. 15-20)
+    [Tooltip("Szybkość przejścia kamery. Im większa wartość, tym szybciej kamera osiągnie cel.")]
     [SerializeField] private float transitionSpeed = 15f; 
-    
-    // Nie potrzebujesz już tych pól: private float startTime; private bool isMoving = false;
     
     private Vector3 targetPosition;
     private Quaternion targetRotation;
     
-    // Ustawia początkowy cel kamery na jej aktualną pozycję
     void Start()
     {
+        // Inicjalizacja celu na aktualnej pozycji, aby Lerp nie ruszył od razu na (0,0,0)
         targetPosition = transform.position;
         targetRotation = transform.rotation;
     }
 
     void Update()
     {
-        // Płynne przesuwanie w kierunku celu w każdej klatce
+        // KLUCZOWA ZMIANA: Ciągłe, płynne przesuwanie w kierunku celu w każdej klatce
+        // Ten mechanizm jest bardziej odporny na nadpisywanie
         transform.position = Vector3.Lerp(transform.position, targetPosition, transitionSpeed * Time.deltaTime);
         transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, transitionSpeed * Time.deltaTime);
-
-        // Opcjonalnie: Log, by potwierdzić, że Update działa
-        // Debug.Log($"Kamera aktualizuje pozycję. Cel: {targetPosition}"); 
     }
 
     public void SetNewTarget(Transform target)
@@ -37,7 +35,7 @@ public class MenuCameraController : MonoBehaviour
              return;
         }
         
-        // Usuwamy isMoving = true, ponieważ ruch jest teraz stały
+        // Aktualizacja celu
         targetPosition = target.position;
         targetRotation = target.rotation;
         
